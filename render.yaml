@@ -1,0 +1,42 @@
+# Render Blueprint — App BiT (Equipo 17)
+# Deploy de monorepo: 2 serviços (backend Python + frontend estático) no mesmo repo.
+# Docs: https://render.com/docs/blueprint-spec  |  Passo a passo: docs/deploy.md
+
+services:
+  # ---------- Backend: API Python / FastAPI ----------
+  - name: appbit-api
+    type: web
+    runtime: python
+    rootDir: ./backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    buildFilter:
+      paths:
+        - backend/**          # só rebuilda quando o backend muda
+    envVars:
+      - key: AI_PROVIDER
+        value: mock           # mock | claude — começa no mock (sem chave)
+      - key: AI_API_KEY
+        sync: false           # definir NO PAINEL do Render, NUNCA no repo
+      - key: FRONTEND_ORIGIN
+        sync: false           # URL do frontend (usada no CORS) — preencher após 1º deploy
+
+  # ---------- Frontend: React + Vite (site estático) ----------
+  - name: appbit-web
+    type: web
+    runtime: static
+    rootDir: ./frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    buildFilter:
+      paths:
+        - frontend/**         # só rebuilda quando o frontend muda
+    envVars:
+      - key: VITE_API_URL
+        sync: false           # URL da API — preencher após 1º deploy (e REBUILDAR, ver docs/deploy.md)
+    routes:
+      - type: rewrite         # SPA: qualquer rota cai no index.html (senão F5 dá 404)
+        source: /*
+        destination: /index.html
