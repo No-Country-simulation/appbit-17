@@ -1,0 +1,17 @@
+/* ============================================================
+   FONTES — App BiT (Equipo 17)
+   Tailwind v4: cada token vira utilitário (font-sans · font-display · font-mono).
+   👉 ESQUELETO: ajuste os stacks e CARREGUE as fontes.
+
+   Como carregar (escolha uma):
+   1) Google Fonts via <link> no frontend/index.html (recomendado):
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+   2) Self-hosted: adicione @font-face aqui mesmo.
+   Sem carregar, cai no fallback system-ui (funciona, sem a fonte custom).
+   ============================================================ */
+
+@theme {
+  --font-sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;        /* TODO: corpo  */
+  --font-display: "Poppins", system-ui, sans-serif;                       /* TODO: títulos */
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace; /* TODO: código */
+}

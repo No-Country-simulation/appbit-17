@@ -1,0 +1,19 @@
+/* ============================================================
+   TEMA — entrada de estilos do app (importado em main.tsx).
+   Junta o Tailwind v4 + os tokens separados por arquivo.
+   ============================================================ */
+@import "tailwindcss";
+@import "./colors.css";
+@import "./fonts.css";
+
+/* ---- Tokens diversos (raio, etc.) — TODO ajustar ---- */
+@theme {
+  --radius-card: 0.75rem; /* vira rounded-card */
+}
+
+/* ---- Base global — TODO ajustar conforme o tema ---- */
+body {
+  background-color: var(--color-surface-muted);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
