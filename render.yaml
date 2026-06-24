@@ -17,7 +17,7 @@ services:
         - backend/**          # só rebuilda quando o backend muda
     envVars:
       - key: AI_PROVIDER
-        value: mock           # mock | claude — começa no mock (sem chave)
+        value: mock           # mock | gemini — começa no mock (sem chave)
       - key: AI_API_KEY
         sync: false           # definir NO PAINEL do Render, NUNCA no repo
       - key: FRONTEND_ORIGIN
