@@ -188,3 +188,52 @@ e arriscada de fazer à mão — Radix entrega pronto; o visual continua sendo o
 
 **Trade-off:** setup inicial pra reconciliar tokens shadcn ↔ DS. Confirmar o caminho de install
 do shadcn pro **Tailwind v4**.
+
+---
+
+## ADR-013 — Padrão de componente: pasta + estilo/estado separados
+**Data:** 2026-06-25 · **Status:** Aceito
+
+**Contexto:** os componentes "à mão" do DS (ADR-012) têm múltiplos estados visuais
+(Padrão/Hover/Ativo/Desabilitado) e variações (tamanhos, cor de chip). Misturar markup, classes
+de layout e classes de estado num só arquivo vira ruído e dificulta manter consistência.
+
+**Decisão:** **uma pasta por componente**, com estilo e estado em arquivos separados:
+```
+components/<Nome>/
+├── index.ts            ← barrel (componente + tipos)
+├── <Nome>.tsx          ← markup + props (lógica)
+├── <Nome>.styles.ts    ← estrutura FIXA (layout/tamanho) + helper cx
+└── <Nome>.states.ts    ← resolveState(props) + stateStyles (Record<estado, classes>)
+```
+Convenções:
+- **`cx` local** (`parts.filter(Boolean).join(' ')`) — **sem** `clsx`/`tailwind-merge` (zero deps novas).
+- **Hover é pseudo-estado CSS** (`hover:` no estado `default`), **não** vira prop. Só `active`/`disabled` são props.
+- **Sempre tokens do tema** (`bg-primary`, `text-ink`, `rounded-card`, `shadow-elev-*`) — nunca paleta crua (`bg-blue-500`).
+- Tokens do tema preenchidos a partir do **print do design system** (cores, escala tipográfica, sombras `elev-0..3`, raios) em `src/styles/*.css` (Tailwind v4 `@theme`).
+
+**Motivos:** separar estrutura imutável de variação por estado deixa o `.tsx` declarativo, facilita
+adicionar estados e garante que todos os componentes consumam os mesmos tokens (identidade visual única).
+
+**Trade-off:** mais arquivos por componente. Aceito — paga em legibilidade e consistência.
+Já aplicado em `IconButton`, `NavItem`, `TabNav`, `KpiCard`.
+
+---
+
+## ADR-014 — Fonte Inter via @fontsource (self-host)
+**Data:** 2026-06-25 · **Status:** Aceito
+
+**Contexto:** o DS usa **Inter** como família única. Opções: Google Fonts via `<link>` (CDN) ou
+self-host. O app será PWA (ADR-009), que precisa funcionar offline.
+
+**Decisão:** self-host com **`@fontsource-variable/inter`** (fonte variável, pesos 400–700 num só
+arquivo), importado em `src/main.tsx`. Sem Poppins/`font-display` — Inter para tudo.
+
+**Motivos:** funciona offline (alinha com PWA), sem dependência de CDN externo; os `.woff2` entram
+no `dist/` no build (hash/cache). Fonte variável = todos os pesos com um arquivo.
+
+**Pegadinhas (custaram debugging):**
+- O pacote registra a família como **`"Inter Variable"`** (não `"Inter"`). O `--font-sans` precisa
+  começar com `"Inter Variable"`, senão renderiza em `system-ui` silenciosamente.
+- O import side-effect precisa de **`declare module "@fontsource-variable/inter"`** em
+  `src/vite-env.d.ts`, senão o **`tsc -b`** do `npm run build` quebra (o `dev` não pega).
