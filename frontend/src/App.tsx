@@ -5,6 +5,8 @@ import { TabNav } from "./components/TabNav";
 import { KpiCardLarge, KpiCardSmall } from "./components/KpiCard";
 import { AIQueryBar } from "./components/AIQueryBar";
 import { AlertBadge } from "./components/AlertBadge";
+import { MapPin } from "./components/MapPin";
+import { Avatar } from "./components/Avatar";
 
 /** Ícone de exemplo (quadrado arredondado). `currentColor` herda a cor do estado. */
 function SquareGlyph({ size = 18 }: { size?: number }) {
@@ -105,6 +107,36 @@ function App() {
               <span className="text-caption text-ink-muted">Com valor</span>
               <AIQueryBar value={filledQuery} onChange={setFilledQuery} />
             </div>
+          </div>
+        </Section>
+
+        {/* ---- Avatar do usuário ---- */}
+        <Section title="Avatar usuário">
+          <div className="flex items-end gap-10">
+            <Demo label="Pequeno 32px">
+              <Avatar name="Nina Alves" size="sm" />
+            </Demo>
+            <Demo label="Médio 40px">
+              <Avatar name="Nina Alves" size="md" />
+            </Demo>
+            <Demo label="Grande 48px">
+              <Avatar name="Nina Alves" size="lg" />
+            </Demo>
+          </div>
+        </Section>
+
+        {/* ---- Marcador do mapa (pins) ---- */}
+        <Section title="Marcador mapa — pins">
+          <div className="flex items-start gap-10">
+            <Demo label="Padrão">
+              <MapPin label="Marcador padrão" />
+            </Demo>
+            <Demo label="Selecionado">
+              <MapPin state="selected" label="Marcador selecionado" />
+            </Demo>
+            <Demo label="Alerta">
+              <MapPin state="alert" label="Marcador em alerta" />
+            </Demo>
           </div>
         </Section>
 
