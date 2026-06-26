@@ -1,15 +1,15 @@
-import logoWhite from "../../assets/logo-white.png";
+import logoBlack from "../../assets/logo-black.svg";
+import logoWhite from "../../assets/logo-white.svg";
 
 export type LogoProps = {
   /** Classe utilitária p/ tamanho. Sem ela, usa o tamanho original do arquivo. */
   className?: string;
+  /** "white" (default, fundos escuros) · "dark" (fundos claros). */
+  variant?: "white" | "dark";
 };
 
-/**
- * Logo AppBiT — versão branca (para fundos escuros).
- * Sem `className`, renderiza no tamanho original (131×43).
- * TODO: quando houver a versão escura, adicionar prop `variant`.
- */
-export function Logo({ className }: LogoProps) {
-  return <img src={logoWhite} alt="AppBiT" className={className} />;
+/** Logo AppBiT (SVG, nítida em qualquer tamanho). */
+export function Logo({ className, variant = "white" }: LogoProps) {
+  const src = variant === "dark" ? logoBlack : logoWhite;
+  return <img src={src} alt="AppBiT" className={className} />;
 }
