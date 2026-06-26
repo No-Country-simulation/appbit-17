@@ -25,7 +25,9 @@ export function SignInPage() {
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* ---- Painel esquerdo (hero) ---- */}
       <aside className="bg-hero-navy hidden flex-col justify-between p-12 text-ink-inverse lg:flex">
-        <Logo className="h-9 w-auto" />
+        <div>
+          <Logo className="h-9 w-auto" />
+        </div>
 
         <div className="max-w-md space-y-6">
           <h1 className="text-5xl font-bold leading-[1.05]">
