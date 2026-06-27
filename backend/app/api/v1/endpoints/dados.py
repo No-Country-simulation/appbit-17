@@ -14,6 +14,6 @@ def consultar_dados(body: ConsultaRequest) -> RespostaPaper:
     )
 
     return RespostaPaper(
-        afirmacao=f"Consulta recebida: '{body.consulta}'. Dados em processamento.",
+        afirmacao=f"Consulta recebida: '{body.consulta}'. Dados em processamento. {dados}",
         nivel_confianca="media",
     )
