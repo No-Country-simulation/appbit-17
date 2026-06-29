@@ -10,10 +10,9 @@ export function cx(...parts: Array<string | false | null | undefined>): string {
 }
 
 export const styles = {
-  /** Container 40×40 — quadrado arredondado, ícone centralizado. */
+  /** Container 40×40 — ícone centralizado. Cor/raio vêm da variante+estado. */
   root: cx(
-    'inline-flex h-10 w-10 items-center justify-center',
-    'rounded-btn-sm transition-colors',
+    'inline-flex h-10 w-10 items-center justify-center transition-colors',
     'outline-none focus-visible:ring-2 focus-visible:ring-primary/60',
   ),
 } as const
