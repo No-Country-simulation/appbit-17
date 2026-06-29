@@ -1,0 +1,68 @@
+/* ============================================================
+   PONTE SHADCN ↔ NOSSO TEMA
+   Componentes do shadcn (components/ui) usam tokens semânticos
+   (--background, --foreground, --primary...). Aqui mapeamos esses
+   tokens pros nossos `--color-*` (definidos em colors.css), pra os
+   componentes nascerem com a identidade do DS.
+
+   ⚠️ Não redefinimos o que já temos como utilitário (ex.: `bg-primary`
+   já vem de colors.css) — só o que falta (background, card, muted...).
+   ============================================================ */
+
+:root {
+  --background: var(--color-surface);
+  --foreground: var(--color-ink);
+  --card: var(--color-surface);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-surface);
+  --popover-foreground: var(--color-ink);
+  --primary-foreground: var(--color-ink-inverse);
+  --secondary: var(--color-surface-sec);
+  --secondary-foreground: var(--color-ink);
+  --muted: var(--color-surface-sec);
+  --muted-foreground: var(--color-ink-muted);
+  --accent: var(--color-primary-soft);
+  --accent-foreground: var(--color-primary);
+  --destructive: var(--color-critical);
+  --destructive-foreground: var(--color-ink-inverse);
+  --border: var(--color-line);
+  --input: var(--color-line);
+  --ring: var(--color-primary);
+  --radius: 0.75rem;
+}
+
+/* Expõe os tokens acima como utilitários do Tailwind v4 (bg-background,
+   text-muted-foreground, border-border, ring-ring...). `primary` já existe
+   em colors.css, então NÃO é redeclarado aqui (evita referência circular). */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Cor de borda padrão (shadcn usa a classe `border` esperando --border). */
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+}
