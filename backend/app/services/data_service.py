@@ -1,32 +1,89 @@
-"""Acesso aos dados (pandas). Carrega o Parquet do pipeline e filtra em memória.
+"""Acesso aos dados (pandas) — loader de CSV com agregação em memória.
 
-Sem mock: enquanto o `scripts/ingest.py` não gerar o Parquet, `buscar()` devolve [].
+No 1º acesso, carrega `tensor_concentracao.csv` (concentração + qualidade de rede) e
+`assinantes.csv` (renda), agrega por município/cluster/período e cruza a renda. O
+resultado fica cacheado em memória; `buscar()` filtra esse DataFrame.
+
+Interface estável: `buscar(regiao, limite) -> list[dict]`. Quando o `scripts/ingest.py`
+gerar o Parquet, basta trocar o `_carregar()` por `pd.read_parquet(...)` — o resto não muda.
 """
+
+import math
+import unicodedata
 from pathlib import Path
+
 import pandas as pd
 
-# app/services/data_service.py -> parents[2] = backend/
-PARQUET = Path(__file__).resolve().parents[2] / "dataset" / "processed" / "concentracao.parquet"
+DATASET = Path(__file__).resolve().parents[2] / "dataset"
+CONCENTRACAO_CSV = DATASET / "tensor_concentracao.csv"
+ASSINANTES_CSV = DATASET / "assinantes.csv"
 
 _df: pd.DataFrame | None = None
 
 
-def _load() -> pd.DataFrame | None:
+def _normalizar(s: str) -> str:
+    """minúsculo, sem acento, '_'→' ' — pra casar 'São José' com 'Sao Jose'/'SAO_JOSE_*'."""
+    s = unicodedata.normalize("NFKD", str(s)).encode("ascii", "ignore").decode()
+    return s.lower().replace("_", " ")
+
+
+def _carregar() -> pd.DataFrame:
+    """Lê os CSV e devolve o agregado por município/cluster/período (com renda)."""
+    # 1) concentração + qualidade de rede, média dos 15 dias por zona/período
+    conc = pd.read_csv(CONCENTRACAO_CSV, dtype={"ecgi": str})
+    agregado = conc.groupby(["municipio", "cluster", "periodo"], as_index=False).agg(
+        concentracao=("n_usuarios", "mean"),
+        congestionamento=("congestionamento_medio", "mean"),
+        drop_rede=("drop_pct_medio", "mean"),
+        lat=("lat", "first"),
+        lon=("lon", "first"),
+    )
+
+    # 2) renda predominante por cluster (income_cluster A/B/C/D) — dado real de desigualdade
+    assinantes = pd.read_csv(ASSINANTES_CSV)
+    renda = (
+        assinantes.groupby("home_cluster")["income_cluster"]
+        .agg(lambda s: s.mode().iat[0] if not s.mode().empty else None)
+        .rename("renda")
+        .reset_index()
+    )
+    agregado = agregado.merge(renda, left_on="cluster", right_on="home_cluster", how="left")
+    agregado = agregado.drop(columns=["home_cluster"])
+
+    # 3) arredonda pra ficar limpo no prompt/IA e no mapa
+    agregado["concentracao"] = agregado["concentracao"].round().astype("int64")
+    agregado["congestionamento"] = agregado["congestionamento"].round(3)
+    agregado["drop_rede"] = agregado["drop_rede"].round(4)
+
+    # coluna oculta de busca (município + cluster, normalizada)
+    agregado["_busca"] = (agregado["municipio"] + " " + agregado["cluster"]).map(_normalizar)
+    return agregado
+
+
+def _dados() -> pd.DataFrame:
     global _df
-    if _df is None and PARQUET.exists():
-        _df = pd.read_parquet(PARQUET)
+    if _df is None:
+        _df = _carregar() if CONCENTRACAO_CSV.exists() else pd.DataFrame()
     return _df
 
 
+def _nativo(v):
+    """Converte escalar numpy → Python nativo e NaN → None (serialização segura)."""
+    item = v.item() if hasattr(v, "item") else v
+    if isinstance(item, float) and math.isnan(item):
+        return None
+    return item
+
+
 def buscar(regiao: str | None = None, limite: int = 10) -> list[dict]:
-    """Retorna as linhas relevantes (filtradas por município/cluster) como dicts."""
-    df = _load()
-    if df is None:
-        return []  # sem dados até o pipeline gerar o Parquet
+    """Linhas agregadas filtradas por município/cluster (None = todas)."""
+    df = _dados()
+    if df.empty:
+        return []
 
     out = df
     if regiao:
-        r = regiao.lower()
-        out = df[df["municipio"].str.lower().str.contains(r)
-                 | df["cluster"].str.lower().str.contains(r)]
-    return out.head(limite).to_dict("records")
+        out = df[df["_busca"].str.contains(_normalizar(regiao), regex=False)]
+
+    registros = out.head(limite).drop(columns=["_busca"]).to_dict("records")
+    return [{k: _nativo(v) for k, v in r.items()} for r in registros]

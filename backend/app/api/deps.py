@@ -1,4 +1,5 @@
 """Dependências FastAPI (injeção)."""
+
 from functools import lru_cache
 
 from app.gateways.ai_gateway import get_ai_gateway

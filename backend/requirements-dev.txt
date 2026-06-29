@@ -1,0 +1,4 @@
+# Dependências de desenvolvimento (não vão pro runtime/Render)
+ruff
+pytest
+httpx          # usado pelo TestClient do FastAPI

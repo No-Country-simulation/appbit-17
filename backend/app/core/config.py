@@ -6,7 +6,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
-    ai_api_key: str = ""               # chave do Gemini (plugar pra ativar a IA)
+    ai_api_key: str = ""  # chave do Gemini (plugar pra ativar a IA)
     ai_model: str = "gemini-3.5-flash"
     frontend_origin: str = "http://localhost:5173"
     port: int = 8000

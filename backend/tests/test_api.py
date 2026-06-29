@@ -1,4 +1,5 @@
 """Smoke test da API (rodar de backend/: pytest)."""
+
 from fastapi.testclient import TestClient
 
 from app.main import app

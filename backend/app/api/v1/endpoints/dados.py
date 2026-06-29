@@ -1,9 +1,11 @@
 from fastapi import APIRouter
+
 from app.schemas.dados import ConsultaRequest, RespostaPaper
 from app.services import data_service
 from app.api.deps import get_ai_service
 
 router = APIRouter()
+
 
 @router.post("/dados", response_model=RespostaPaper)
 def consultar_dados(body: ConsultaRequest) -> RespostaPaper:

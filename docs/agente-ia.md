@@ -49,7 +49,8 @@ class GeminiGateway:
         return resp.text
 ```
 
-`get_ai_gateway()` devolve o `GeminiGateway` (erro claro se faltar `AI_API_KEY`). Plugar a IA
+`get_ai_gateway()` devolve sempre o `GeminiGateway` (a chave é checada **lazy** em `gerar()` →
+sem chave, cai no fallback do `ai_service`, não 500). Plugar a IA
 = setar `AI_API_KEY` no `.env`/painel do Render. **Nada mais muda.**
 
 ## Desafios de subir o agente (e mitigação)
@@ -81,6 +82,6 @@ o SDK converte, inclusive aninhado/Optional). Ler `resp.text` e validar com Pyda
 **Regras:**
 - `AI_API_KEY` vive **só** no backend, **nunca** versionada (obrigatória em prod).
 - Integração isolada no `GeminiGateway`; prompt/validação no `ai_service`.
-- **Sem mock** — `get_ai_gateway()` levanta erro se faltar a chave.
+- **Sem mock** — sem a chave, a IA cai no **fallback** do `ai_service` (não 500). Timeout de **30s** na chamada.
 - `system_instruction` separado do conteúdo (reduz prompt-injection).
 - Schemas **tipados** (ex.: `PontoMapa`) — structured output rejeita `dict` cru.

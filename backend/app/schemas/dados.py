@@ -1,23 +1,24 @@
 """Schemas Pydantic = o contrato da API (ver docs/contrato-integracao.md)."""
+
 from pydantic import BaseModel, Field
 
 
 # ---------- Entrada ----------
 class Filtros(BaseModel):
-    regiao: str | None = None      # município ou cluster; None = todas
-    indicador: str | None = None   # concentracao | qualidade_rede | renda | ...
+    regiao: str | None = None  # município ou cluster; None = todas
+    indicador: str | None = None  # concentracao | qualidade_rede | renda | ...
 
 
 class ConsultaRequest(BaseModel):
     consulta: str
     filtros: Filtros = Field(default_factory=Filtros)
-    idioma: str = "pt"             # pt | es | en
+    idioma: str = "pt"  # pt | es | en
 
 
 # ---------- Saída (o "mini-paper") ----------
 class Evidencia(BaseModel):
     dado: str
-    valor: str                     # texto (a IA formata números como string)
+    valor: str  # texto (a IA formata números como string)
     regiao: str | None = None
     periodo: str | None = None
     fonte: str
@@ -26,7 +27,7 @@ class Evidencia(BaseModel):
 class Fonte(BaseModel):
     nome: str
     url: str | None = None
-    tipo: str = "dataset"          # dataset | publica | enriquecida
+    tipo: str = "dataset"  # dataset | publica | enriquecida
 
 
 class PontoMapa(BaseModel):
@@ -37,7 +38,7 @@ class PontoMapa(BaseModel):
 
 
 class Visualizacao(BaseModel):
-    tipo: str = "nenhuma"          # mapa | barra | nenhuma
+    tipo: str = "nenhuma"  # mapa | barra | nenhuma
     dados: list[PontoMapa] = Field(default_factory=list)
 
 

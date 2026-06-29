@@ -4,11 +4,12 @@ Monta o contexto (padrão ANCORADO: usa só os dados recebidos), passa as instru
 como `system`, delega a chamada ao `AIGateway` e valida a resposta no schema do "paper".
 Se a IA falhar ou devolver algo inválido, retorna um "paper" de baixa confiança (sem 500).
 """
+
 import json
 import logging
 
-from app.schemas.dados import RespostaPaper
 from app.gateways.ai_gateway import AIGateway
+from app.schemas.dados import RespostaPaper
 
 logger = logging.getLogger(__name__)
 

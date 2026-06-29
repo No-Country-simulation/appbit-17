@@ -1,0 +1,14 @@
+# Ruff — linter + formatter (https://docs.astral.sh/ruff/)
+target-version = "py311"
+line-length = 100
+
+[lint]
+# E/W: pycodestyle · F: pyflakes · I: isort · B: bugbear · UP: pyupgrade
+select = ["E", "F", "I", "B", "UP"]
+ignore = [
+    "E501",  # comprimento de linha — o formatter cuida do código
+    "B008",  # call em argumento default: é o padrão do FastAPI (Depends())
+]
+
+[lint.per-file-ignores]
+"tests/*" = ["B"]  # asserts/fixtures em testes

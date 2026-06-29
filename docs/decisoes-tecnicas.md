@@ -226,7 +226,8 @@ adicionar estados e garante que todos os componentes consumam os mesmos tokens (
 decidiu plugar o **Gemini direto** — sem mock.
 
 **Decisão:** remover o mock (`MockGateway`) e a seleção por `AI_PROVIDER`. O `get_ai_gateway()`
-retorna sempre o `GeminiGateway` e **levanta erro claro se faltar `AI_API_KEY`**. O `data_service`
+retorna sempre o `GeminiGateway`; a chave é checada **lazy dentro de `gerar()`**, então sem
+`AI_API_KEY` o erro cai no `try/except` do `ai_service` (fallback `confiança: baixa`, **sem 500**). O `data_service`
 devolve `[]` (sem dados falsos) até o Parquet existir. A robustez fica num **try/except** no
 `ai_service` (IA falhou/voltou inválido → "paper" `confiança: baixa`, sem 500).
 
