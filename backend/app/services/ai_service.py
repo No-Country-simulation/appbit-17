@@ -13,11 +13,18 @@ from app.schemas.dados import RespostaPaper
 
 logger = logging.getLogger(__name__)
 
+# código do idioma → nome explícito (a IA obedece melhor o nome do que o código "pt")
+_IDIOMA_NOME = {
+    "pt": "português (Brasil)",
+    "es": "español",
+    "en": "English",
+}
+
 _SYSTEM = (
     "Você é um analista de dados públicos para gestores. Responda à PERGUNTA usando "
     "SOMENTE os dados em DADOS_JSON. NUNCA invente números nem fatos. Se os dados não "
     "bastarem, diga isso na 'afirmacao' e use nivel_confianca='baixa'. Cite sempre a "
-    "fonte. Escreva no idioma '{idioma}'."
+    "fonte. RESPONDA SEMPRE EM {idioma} — independentemente do idioma da pergunta ou dos dados."
 )
 
 
@@ -34,7 +41,8 @@ class AIService:
         )
 
     def responder(self, consulta: str, dados: list[dict], idioma: str = "pt") -> RespostaPaper:
-        system = _SYSTEM.format(idioma=idioma)
+        idioma_nome = _IDIOMA_NOME.get(idioma, _IDIOMA_NOME["pt"])
+        system = _SYSTEM.format(idioma=idioma_nome)
         contexto = self.montar_contexto(consulta, dados)
         try:
             bruto = self._gateway.gerar(contexto, system=system, response_schema=RespostaPaper)

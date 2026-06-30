@@ -1,6 +1,10 @@
 """Schemas Pydantic = o contrato da API (ver docs/contrato-integracao.md)."""
 
-from pydantic import BaseModel, Field
+from typing import Literal
+
+from pydantic import BaseModel, Field, field_validator
+
+Idioma = Literal["pt", "es", "en"]
 
 
 # ---------- Entrada ----------
@@ -12,7 +16,15 @@ class Filtros(BaseModel):
 class ConsultaRequest(BaseModel):
     consulta: str
     filtros: Filtros = Field(default_factory=Filtros)
-    idioma: str = "pt"  # pt | es | en
+    idioma: Idioma = "pt"  # pt | es | en (validado)
+
+    @field_validator("idioma", mode="before")
+    @classmethod
+    def _normalizar_idioma(cls, v: object) -> object:
+        # "PT", "pt-BR", "pt_BR" → "pt"; fora de pt/es/en → 422 (validação do Literal)
+        if isinstance(v, str):
+            return v.strip().lower().replace("_", "-").split("-")[0]
+        return v
 
 
 # ---------- Saída (o "mini-paper") ----------

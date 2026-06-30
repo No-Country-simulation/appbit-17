@@ -35,9 +35,16 @@ Consulta em linguagem natural. Retorna a resposta no formato **"mini-paper"**.
     "regiao": "São José",        // opcional — município/cluster; null = todas
     "indicador": "concentracao"  // opcional — concentracao | qualidade_rede | renda | emprego | formacao | saude_mental
   },
-  "idioma": "pt"                 // pt | es | en  (default: pt)
+  "idioma": "pt"                 // pt | es | en  (validado; default: pt)
 }
 ```
+
+> **`idioma`** é **validado** (`Literal["pt","es","en"]`) e **normalizado** no backend: `"PT"`,
+> `"pt-BR"`, `"pt_BR"` viram `"pt"`. Valor fora de pt/es/en → **422**. A IA é instruída a
+> **responder sempre no idioma pedido**, mesmo que a pergunta/dados estejam em outra língua.
+>
+> **`filtros.regiao`** casa **município OU cluster**, por *substring* **sem acento/underscore**
+> (`"São José"` casa `SAO_JOSE_*`). **`filtros.indicador`** ainda **não filtra** os dados (uso futuro / dica à IA).
 
 ### Response 200 — o "mini-paper"
 ```json
