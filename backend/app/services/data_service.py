@@ -75,15 +75,22 @@ def _nativo(v):
     return item
 
 
-def buscar(regiao: str | None = None, limite: int = 10) -> list[dict]:
-    """Linhas agregadas filtradas por município/cluster (None = todas)."""
+def buscar(regiao: str | None = None, limite: int = 50) -> list[dict]:
+    """Linhas agregadas filtradas por município/cluster.
+
+    Sem `regiao` (pergunta geral, ex. "onde há mais congestionamento?"), devolve o
+    agregado completo — são ~96 linhas, cabem folgado no prompt, e dão à IA a visão
+    total pra responder qualquer ranking sem o data layer ter que adivinhar a métrica.
+    Com `regiao`, o filtro já reduz bastante; `limite` é só uma trava de segurança.
+    """
     df = _dados()
     if df.empty:
         return []
 
-    out = df
     if regiao:
-        out = df[df["_busca"].str.contains(_normalizar(regiao), regex=False)]
+        out = df[df["_busca"].str.contains(_normalizar(regiao), regex=False)].head(limite)
+    else:
+        out = df
 
-    registros = out.head(limite).drop(columns=["_busca"]).to_dict("records")
+    registros = out.drop(columns=["_busca"]).to_dict("records")
     return [{k: _nativo(v) for k, v in r.items()} for r in registros]
