@@ -18,6 +18,19 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(api_router, prefix="/api/v1")  # /api/v1/health, /api/v1/dados, /api/v1/mapa
+
+    @app.get("/", tags=["meta"], summary="Info da API")
+    def raiz() -> dict:
+        """Página raiz — evita 404 em https://<host>/ e aponta pros recursos da API."""
+        return {
+            "nome": app.title,
+            "versao": app.version,
+            "status": "ok",
+            "docs": "/docs",
+            "health": "/api/v1/health",
+            "consulta": "POST /api/v1/dados",
+        }
+
     return app
 
 
