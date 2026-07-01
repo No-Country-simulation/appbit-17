@@ -29,7 +29,7 @@ export function AnalyticsPage() {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto p-6">
+    <div className="flex-1 overflow-y-auto p-4 md:p-6">
       <div className="mx-auto max-w-6xl space-y-5">
         {/* Fileira 1 — agente (largo) · métrica · gráfico de linha (mesma altura) */}
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.8fr_1fr_1fr]">
