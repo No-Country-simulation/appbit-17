@@ -1,42 +1,71 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useReactToPrint } from "react-to-print";
 import { Download, Link2, Scale } from "lucide-react";
 import { Button } from "@/components/Button";
 import { DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { exportPdf } from "@/libs/exportPdf";
 import type { QueryResult } from "@/types";
 
 type ExportOption = "pdf" | "link";
 
 export type ExportStepProps = {
-  /** Pergunta do usuário — vai no cabeçalho do relatório impresso. */
+  /** Pergunta do usuário — vai no cabeçalho do relatório. */
   question: string;
   /** Resultado da consulta — conteúdo do PDF. */
   result: QueryResult;
 };
 
-/** Passo 4 — exportar o relatório (PDF via react-to-print) ou copiar link. */
+/**
+ * Passo 4 — exportar o relatório em PDF ou copiar link.
+ * O PDF é gerado no cliente (@react-pdf/renderer → Blob) e entregue via
+ * `exportPdf` (share no mobile/PWA, download no desktop). NÃO usa
+ * window.print() — quebra no PWA standalone do iOS. `@react-pdf` é
+ * carregado sob demanda (import dinâmico) p/ não pesar o chunk do mapa.
+ */
 export function ExportStep({ question, result }: ExportStepProps) {
   const { t, i18n } = useTranslation("query");
   const [selected, setSelected] = useState<ExportOption>("pdf");
-  const contentRef = useRef<HTMLDivElement>(null);
+  const [busy, setBusy] = useState(false);
   // Data de geração (agora) formatada pelo locale + contagem real de fontes.
   const generatedAt = new Intl.DateTimeFormat(i18n.resolvedLanguage ?? i18n.language).format(
     new Date(),
   );
   const sourceCount = result.sources.length;
 
-  const handlePrint = useReactToPrint({
-    contentRef,
-    documentTitle: t("export.printDocTitle"),
-  });
-
-  function handleExport() {
+  async function handleExport() {
     if (selected === "link") {
       void navigator.clipboard?.writeText(window.location.href);
       return;
     }
-    handlePrint();
+    setBusy(true);
+    try {
+      // Lazy: só baixa o @react-pdf (pesado) quando o usuário exporta.
+      const [{ pdf }, { ReportDocument }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("../ReportDocument"),
+      ]);
+      const blob = await pdf(
+        <ReportDocument
+          labels={{
+            title: t("export.reportTitle"),
+            meta: t("export.printMeta", { date: generatedAt }),
+            question: t("export.printQuestion"),
+            answer: t("export.printAnswer"),
+            evidence: t("result.evidence"),
+            colData: t("result.colData"),
+            colValue: t("result.colValue"),
+            colRegion: t("result.colRegion"),
+            colPeriod: t("result.colPeriod"),
+            sources: t("export.printSources"),
+          }}
+          question={question}
+          result={result}
+        />,
+      ).toBlob();
+      await exportPdf(blob, `${t("export.printDocTitle")}.pdf`);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -84,56 +113,9 @@ export function ExportStep({ question, result }: ExportStepProps) {
         {t("export.lgpd")}
       </div>
 
-      <Button variant="primary" fullWidth onClick={handleExport}>
-        {t("export.download")}
+      <Button variant="primary" fullWidth disabled={busy} onClick={handleExport}>
+        {busy ? t("export.generating") : t("export.download")}
       </Button>
-
-      {/* Documento imprimível (fora da tela) — react-to-print clona isto. */}
-      <div className="pointer-events-none fixed -left-[10000px] top-0" aria-hidden>
-        <div ref={contentRef} className="w-[640px] bg-white p-10 text-black">
-          <h1 className="text-2xl font-bold">{t("export.reportTitle")}</h1>
-          <p className="mt-1 text-sm text-neutral-500">{t("export.printMeta", { date: generatedAt })}</p>
-          <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-neutral-500">
-            {t("export.printQuestion")}
-          </p>
-          <p className="mt-1">{question}</p>
-          <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-neutral-500">
-            {t("export.printAnswer")}
-          </p>
-          <p className="mt-1 leading-relaxed">{result.claim}</p>
-          <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-neutral-500">
-            {t("result.evidence")}
-          </p>
-          <table className="mt-2 w-full border-collapse text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-neutral-500">
-                <th className="border-b border-neutral-300 py-1.5 pr-3 font-medium">{t("result.colData")}</th>
-                <th className="border-b border-neutral-300 py-1.5 pr-3 font-medium">{t("result.colValue")}</th>
-                <th className="border-b border-neutral-300 py-1.5 pr-3 font-medium">{t("result.colRegion")}</th>
-                <th className="border-b border-neutral-300 py-1.5 font-medium">{t("result.colPeriod")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {result.evidence.map((row, i) => (
-                <tr key={`${row.label}-${i}`} className="align-top">
-                  <td className="border-b border-neutral-200 py-1.5 pr-3 font-semibold">{row.label}</td>
-                  <td className="border-b border-neutral-200 py-1.5 pr-3 tabular-nums">{row.value}</td>
-                  <td className="border-b border-neutral-200 py-1.5 pr-3">{row.region}</td>
-                  <td className="border-b border-neutral-200 py-1.5 text-neutral-600">{row.period}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-neutral-500">
-            {t("export.printSources")}
-          </p>
-          {result.sources.map((source) => (
-            <p key={source.name} className="mt-1 text-sm text-neutral-600">
-              {source.name}
-            </p>
-          ))}
-        </div>
-      </div>
     </>
   );
 }
