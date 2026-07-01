@@ -6,8 +6,12 @@
    ============================================================ */
 
 export const styles = {
-  root: "relative z-10 grid h-16 grid-cols-3 items-center bg-surface px-6 shadow-elev-3",
+  // min-h + pt-safe: no PWA standalone a barra respeita o notch/status bar do
+  // iOS; em navegador normal o inset é 0 (mantém a altura de 64px). Padding
+  // menor no mobile p/ caber marca + título + ações.
+  root: "relative z-10 grid min-h-16 grid-cols-3 items-center bg-surface px-4 pt-safe shadow-elev-3 md:px-6",
   brand: "flex items-center",
-  title: "text-center text-title-3 text-ink",
+  // truncate + min-w-0: título nunca empurra as colunas laterais no mobile.
+  title: "min-w-0 truncate px-2 text-center text-title-3 text-ink",
   right: "flex items-center justify-end gap-2",
 } as const;

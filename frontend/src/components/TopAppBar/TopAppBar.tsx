@@ -23,7 +23,12 @@ export function TopAppBar({ brand, title, actions, user }: TopAppBarProps) {
 
       <div className={styles.right}>
         {actions}
-        {user && <Avatar name={user.name} size="md" />}
+        {/* Avatar só em telas médias+ — libera espaço no mobile p/ as ações. */}
+        {user && (
+          <span className="hidden md:inline-flex">
+            <Avatar name={user.name} size="md" />
+          </span>
+        )}
       </div>
     </header>
   );
