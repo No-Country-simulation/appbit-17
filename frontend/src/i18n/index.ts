@@ -11,6 +11,7 @@ import ptBRQuery from "./locales/pt-BR/query.json";
 import ptBRNotifications from "./locales/pt-BR/notifications.json";
 import ptBRAnalytics from "./locales/pt-BR/analytics.json";
 import ptBRMap from "./locales/pt-BR/map.json";
+import ptBRReports from "./locales/pt-BR/reports.json";
 import enCommon from "./locales/en/common.json";
 import enNav from "./locales/en/nav.json";
 import enSignIn from "./locales/en/signIn.json";
@@ -19,6 +20,7 @@ import enQuery from "./locales/en/query.json";
 import enNotifications from "./locales/en/notifications.json";
 import enAnalytics from "./locales/en/analytics.json";
 import enMap from "./locales/en/map.json";
+import enReports from "./locales/en/reports.json";
 import esCommon from "./locales/es/common.json";
 import esNav from "./locales/es/nav.json";
 import esSignIn from "./locales/es/signIn.json";
@@ -27,6 +29,7 @@ import esQuery from "./locales/es/query.json";
 import esNotifications from "./locales/es/notifications.json";
 import esAnalytics from "./locales/es/analytics.json";
 import esMap from "./locales/es/map.json";
+import esReports from "./locales/es/reports.json";
 
 /** Idiomas suportados — pt-BR é o padrão/fallback. */
 export const LANGUAGES = ["pt-BR", "en", "es"] as const;
@@ -55,6 +58,7 @@ export const resources = {
     notifications: ptBRNotifications,
     analytics: ptBRAnalytics,
     map: ptBRMap,
+    reports: ptBRReports,
   },
   en: {
     common: enCommon,
@@ -65,6 +69,7 @@ export const resources = {
     notifications: enNotifications,
     analytics: enAnalytics,
     map: enMap,
+    reports: enReports,
   },
   es: {
     common: esCommon,
@@ -75,6 +80,7 @@ export const resources = {
     notifications: esNotifications,
     analytics: esAnalytics,
     map: esMap,
+    reports: esReports,
   },
 } as const;
 

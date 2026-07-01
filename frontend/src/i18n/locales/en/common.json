@@ -3,5 +3,7 @@
   "underConstruction": "Page under construction.",
   "askAI": "Ask the AI",
   "send": "Send",
-  "promptPlaceholder": "Ask about any region..."
+  "promptPlaceholder": "Ask about any region...",
+  "skipToContent": "Skip to content",
+  "mainNav": "Main navigation"
 }
