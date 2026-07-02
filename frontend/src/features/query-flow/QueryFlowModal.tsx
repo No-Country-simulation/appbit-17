@@ -25,7 +25,10 @@ export function QueryFlowModal({ open, onOpenChange, initialQuestion = "" }: Que
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+      {/* `grid-cols-[minmax(0,1fr)]`: a coluna implícita (`auto`) do grid do DialogContent
+          não encolhe abaixo do min-content da tabela do ResultStep (nowrap) → no mobile o
+          modal inteiro ganhava scroll horizontal. Com min 0, quem rola é só o wrapper da tabela. */}
+      <DialogContent className="max-h-[85vh] grid-cols-[minmax(0,1fr)] overflow-y-auto sm:max-w-2xl">
         {flow.step === "input" ? (
           <InputStep
             question={flow.question}
