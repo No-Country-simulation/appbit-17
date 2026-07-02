@@ -1,4 +1,4 @@
 # Dependências de desenvolvimento (não vão pro runtime/Render)
 ruff
 pytest
-httpx          # usado pelo TestClient do FastAPI
+httpx2         # usado pelo TestClient do FastAPI (com httpx v1 o Starlette emite deprecation)
