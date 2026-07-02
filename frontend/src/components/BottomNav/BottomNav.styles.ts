@@ -10,9 +10,10 @@ export function cx(...parts: Array<string | false | null | undefined>): string {
 }
 
 export const styles = {
-  /** Barra fixa no rodapé, acima dos overlays de página; borda + safe-area. */
+  /** Barra no rodapé do app-shell (irmã no fluxo, não `fixed` — evita bugs de
+   *  posição no iOS). Borda no topo + safe-area (home indicator). */
   root: cx(
-    "fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around",
+    "flex items-stretch justify-around",
     "border-t border-line bg-surface pb-safe shadow-elev-2",
   ),
   /** Item — alvo de toque >=56px (acima dos 44px mínimos do iOS). */

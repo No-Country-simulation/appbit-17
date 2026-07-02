@@ -259,28 +259,37 @@ no `dist/` no build (hash/cache). Fonte variável = todos os pesos com um arquiv
 - O import side-effect precisa de **`declare module "@fontsource-variable/inter"`** em
   `src/vite-env.d.ts`, senão o **`tsc -b`** do `npm run build` quebra (o `dev` não pega).
 
-## ADR-018 — Export de PDF: @react-pdf/renderer + Web Share (PWA-safe)
-**Data:** 2026-07-01 · **Status:** Aceito (substitui a escolha inicial de `react-to-print`)
+## ADR-018 — Export de PDF: HÍBRIDO — react-to-print (desktop) + @react-pdf/renderer (mobile/PWA)
+**Data:** 2026-07-01 · **Status:** Aceito · **Revisado:** 2026-07-01 (de "só @react-pdf" p/ híbrido)
 
 **Contexto:** o "paper" (ADR-005) é exportável em PDF. A 1ª implementação usava **`react-to-print`**
 (`window.print()` num iframe). Mas o app é **PWA** (ADR-009) e precisa rodar no mobile: `window.print()`
-**falha silenciosamente no PWA standalone do iOS** (o botão Exportar simplesmente não fazia nada quando o
-app estava "na tela de início").
+**falha silenciosamente no PWA standalone do iOS** (o botão Exportar não fazia nada quando o app estava
+"na tela de início"). A 2ª versão trocou tudo por `@react-pdf/renderer` + Web Share — resolveu o mobile,
+mas no **desktop** o download silencioso de um PDF Helvetica (que não bate com o paper da tela) **ficou
+pior** que o diálogo nativo de impressão que o `react-to-print` dava.
 
-**Decisão:** gerar o PDF **no cliente como `Blob`** com **`@react-pdf/renderer`** (`ReportDocument`,
-em `features/query-flow/`) e entregar via helper **`exportPdf`** (`src/libs/exportPdf.ts`):
-**Web Share API nível 2** (`navigator.share({ files })`) no mobile/PWA → share sheet nativo
-("Salvar em Arquivos", imprimir, enviar); **fallback de download** (`<a download>`) no desktop/Android.
-`react-to-print` **removido**.
+**Decisão:** exportação **híbrida**, roteada por **`preferNativePrint()`** (`src/libs/exportPdf.ts`):
+- **Desktop** (browser não-PWA: `hover:hover` + `pointer:fine`, **não** standalone) → **`react-to-print`**
+  imprime o **`PrintablePaper`** (HTML estilizado com fonte/cores do app) → **diálogo nativo** com preview /
+  "Salvar como PDF". Renderizado **fora da tela** (`fixed -left-[10000px]`; `display:none` não funciona com
+  react-to-print).
+- **Mobile / PWA / iOS** → gera `Blob` com **`@react-pdf/renderer`** (`ReportDocument`) e entrega via
+  **`exportPdf`**: Web Share nível 2 (`navigator.share({ files })`) com fallback `<a download>`.
 
-**Motivos:** caminho único cross-platform, **sem depender de `window.print()`**; PDF **vetorial real**
-(texto selecionável) em vez de diálogo/screenshot; funciona em iOS/Android PWA standalone. O `@react-pdf`
-(~480 KB gzip) é **lazy** (`import()` dinâmico no `handleExport`) → fica **fora do bundle inicial** (chunk próprio).
+**Motivos:** cada plataforma usa o melhor caminho — desktop recupera a UX de impressão nativa (paper
+estilizado, texto selecionável); mobile mantém o fluxo PWA-safe. O bug original **não retorna**: o iOS
+standalone nunca cai no ramo de `print()` (só desktop não-PWA imprime). O `@react-pdf` (~480 KB gzip)
+segue **lazy** (`import()` dinâmico no `handleExport`) → fora do bundle inicial.
 
 **Trade-offs / pegadinhas:**
-- **Desktop muda de UX:** antes abria o diálogo de impressão ("Salvar como PDF"); agora **baixa o `.pdf`
-  direto**. (Se quiser manter o diálogo no desktop, bifurcar por `display-mode: standalone`/mobile.)
-- `@react-pdf` usa **layout próprio** (subset de flexbox), não reaproveita JSX/Tailwind → o `ReportDocument`
-  é reescrito com as primitivas dele; fonte **Helvetica** built-in (não registra Inter).
-- Descartados: **html2canvas/html2pdf** (vira imagem, texto não selecionável); **manter react-to-print**
-  (quebra no iOS PWA); Web Share cancelado pelo usuário (`AbortError`) é tratado como no-op (não cai no download).
+- **Duas representações do mesmo paper** — `PrintablePaper` (HTML/Tailwind, desktop) e `ReportDocument`
+  (primitivas do @react-pdf, mobile) → **manter em sincronia** ao mudar o layout. (Refactor futuro:
+  extrair o corpo comum do `ResultStep`.)
+- `@react-pdf` usa **layout próprio** (subset de flexbox) e fonte **Helvetica** built-in (não registra Inter);
+  cobre Latin-1 (acentos pt/es ok), mas glyphs fora do WinAnsi não renderizam.
+- **react-to-print** copia os stylesheets p/ o iframe de impressão — **web fonts podem não carregar a tempo**
+  (paper sai em fallback); validar no desktop e, se preciso, forçar a fonte em `@media print`.
+- Descartados: **html2canvas/html2pdf** (vira imagem, texto não selecionável); **só react-to-print**
+  (quebra no iOS PWA); **só @react-pdf** (download silencioso ruim no desktop). `AbortError` do Web Share
+  (usuário cancelou) = no-op (não cai no download).

@@ -6,6 +6,24 @@
    NÃO usa window.print() (quebra no PWA standalone do iOS).
    ============================================================ */
 
+/**
+ * Decide a estratégia de exportação por ambiente (exportação HÍBRIDA):
+ *  - `true`  → DESKTOP (browser, não instalado): usar impressão nativa
+ *    (react-to-print) do paper HTML estilizado — diálogo com preview/salvar.
+ *  - `false` → PWA standalone (iOS incluso, onde `window.print()` quebra) ou
+ *    dispositivo touch: usar @react-pdf + Web Share/download.
+ * Sinais: PWA standalone nunca imprime; senão, exige ponteiro fino + hover
+ * (desktop com mouse), o que exclui celular/tablet touch.
+ */
+export function preferNativePrint(): boolean {
+  if (typeof window === "undefined") return false;
+  const standalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  if (standalone) return false;
+  return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+}
+
 /** Compartilha (mobile/PWA) ou baixa (desktop) o PDF `blob` como `filename`. */
 export async function exportPdf(blob: Blob, filename: string): Promise<void> {
   const file = new File([blob], filename, { type: "application/pdf" });

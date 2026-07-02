@@ -26,10 +26,6 @@ body {
 @utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
-/* Altura da bottom nav (56px) + inset inferior — reserva de espaço no <main>. */
-@utility pb-bottom-nav {
-  padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
-}
 
 /* ---- Movimento reduzido (a11y) ----
    Respeita quem pediu menos animação no SO (iOS/Android/desktop): neutraliza

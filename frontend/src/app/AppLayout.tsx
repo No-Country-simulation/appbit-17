@@ -42,7 +42,11 @@ export function AppLayout() {
   const current = nav.find((item) => pathname.startsWith(item.value));
 
   return (
-    <div className="flex min-h-screen flex-col bg-app">
+    // h-dvh (viewport DINÂMICO) em vez de min-h-screen (=100vh): no iOS o 100vh
+    // conta a área atrás das barras do Safari/Chrome → conteúdo do rodapé (mapa
+    // + prompt) ficava cortado/escondido. Com dvh + BottomNav no fluxo (não
+    // fixed), topbar + conteúdo + nav cabem exatos na área visível.
+    <div className="flex h-dvh flex-col overflow-hidden bg-app">
       {/* Skip-link — primeiro elemento focável; visível só ao receber foco (teclado). */}
       <a
         href="#main-content"
@@ -71,7 +75,7 @@ export function AppLayout() {
         user={MOCK_USER}
       />
 
-      <div className="flex flex-1">
+      <div className="flex min-h-0 flex-1">
         {/* Coluna branca da sidebar — só em telas médias+; no mobile vira BottomNav. */}
         <aside className="hidden w-40 items-center justify-center bg-surface px-4 md:flex">
           <SideAppBar
@@ -81,12 +85,10 @@ export function AppLayout() {
           />
         </aside>
 
-        {/* Reserva espaço no rodapé (pb-bottom-nav) só no mobile, p/ o conteúdo
-            não ficar atrás da BottomNav fixa. */}
-        <main
-          id="main-content"
-          className="flex min-h-0 flex-1 flex-col pb-bottom-nav md:pb-0"
-        >
+        {/* min-h-0: deixa o <main> encolher p/ as páginas roláveis (Analytics/
+            Reports) scrollarem por dentro. A BottomNav é irmã no fluxo (abaixo),
+            então o conteúdo já para acima dela — sem reserva de padding. */}
+        <main id="main-content" className="flex min-h-0 flex-1 flex-col">
           <Suspense fallback={<PageFallback />}>
             <Outlet />
           </Suspense>
