@@ -3,7 +3,7 @@
 from functools import lru_cache
 
 from app.gateways.ai_gateway import get_ai_gateway
-from app.services.ai_service import AIService
+from app.services.ia import AIService
 
 
 @lru_cache

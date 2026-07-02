@@ -1,17 +1,12 @@
-"""Service de IA — lógica de aplicação (NÃO faz a chamada externa).
+"""Prompts do agente de IA — o texto vive aqui, separado da orquestração.
 
-Monta o contexto (padrão ANCORADO: usa só os dados recebidos), passa as instruções
-como `system`, delega a chamada ao `AIGateway` e valida a resposta no schema do "paper".
-Se a IA falhar ou devolver algo inválido, retorna um "paper" de baixa confiança (sem 500).
+O prompt do sistema é o artefato mais editado do serviço (fidelidade, métrica quase
+uniforme e proxy foram reforçados em rodadas — ver skills/backend.md); separado da
+classe, iterar no texto não toca o código de orquestração do `AIService`.
+`montar_system()` e `montar_contexto()` são funções puras: dados entram, texto sai.
 """
 
 import json
-import logging
-
-from app.gateways.ai_gateway import AIGateway
-from app.schemas.dados import RespostaPaper
-
-logger = logging.getLogger(__name__)
 
 # código do idioma → nome explícito (a IA obedece melhor o nome do que o código "pt")
 _IDIOMA_NOME = {
@@ -57,36 +52,20 @@ _SYSTEM = (
 )
 
 
-class AIService:
-    def __init__(self, gateway: AIGateway) -> None:
-        self._gateway = gateway
+def montar_system(idioma: str) -> str:
+    """Instruções do sistema no idioma pedido (desconhecido → português)."""
+    return _SYSTEM.format(idioma=_IDIOMA_NOME.get(idioma, _IDIOMA_NOME["pt"]))
 
-    def montar_contexto(
-        self, consulta: str, dados: list[dict], mobilidade: list[dict] | None = None
-    ) -> str:
-        partes = ["CONCENTRACAO_JSON:\n" + json.dumps(dados, ensure_ascii=False, default=str)]
-        if mobilidade:
-            partes.append(
-                "MOBILIDADE_JSON:\n" + json.dumps(mobilidade, ensure_ascii=False, default=str)
-            )
-        return "\n\n".join(partes) + "\n\nPERGUNTA:\n" + consulta
 
-    def responder(
-        self,
-        consulta: str,
-        dados: list[dict],
-        idioma: str = "pt",
-        mobilidade: list[dict] | None = None,
-    ) -> RespostaPaper:
-        idioma_nome = _IDIOMA_NOME.get(idioma, _IDIOMA_NOME["pt"])
-        system = _SYSTEM.format(idioma=idioma_nome)
-        contexto = self.montar_contexto(consulta, dados, mobilidade)
-        try:
-            bruto = self._gateway.gerar(contexto, system=system, response_schema=RespostaPaper)
-            return RespostaPaper.model_validate_json(bruto)
-        except Exception:  # noqa: BLE001 — fallback amplo de propósito (IA é externa)
-            logger.exception("Falha ao gerar/validar a resposta da IA")
-            return RespostaPaper(
-                afirmacao="Não foi possível gerar a resposta agora (IA indisponível). Tente novamente.",
-                nivel_confianca="baixa",
-            )
+def montar_contexto(consulta: str, dados: list[dict], mobilidade: list[dict] | None = None) -> str:
+    """Conteúdo do usuário: conjuntos rotulados (padrão ancorado) + a pergunta.
+
+    `CONCENTRACAO_JSON` sempre vai; `MOBILIDADE_JSON` só quando há fluxos — o system
+    instrui a IA a escolher o conjunto adequado à pergunta.
+    """
+    partes = ["CONCENTRACAO_JSON:\n" + json.dumps(dados, ensure_ascii=False, default=str)]
+    if mobilidade:
+        partes.append(
+            "MOBILIDADE_JSON:\n" + json.dumps(mobilidade, ensure_ascii=False, default=str)
+        )
+    return "\n\n".join(partes) + "\n\nPERGUNTA:\n" + consulta
