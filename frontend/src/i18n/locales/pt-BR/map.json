@@ -5,7 +5,12 @@
     "education": "Educação",
     "health": "Saúde",
     "housing": "Habitação",
-    "employment": "Emprego"
+    "employment": "Emprego",
+    "network": "Cobertura de Rede"
+  },
+  "coverage": {
+    "pinLabel": "Zona monitorada",
+    "peakLabel": "Pico de usuários conectados"
   },
   "legend": {
     "title": "Camadas ativas",

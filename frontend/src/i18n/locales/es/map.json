@@ -5,7 +5,12 @@
     "education": "Educación",
     "health": "Salud",
     "housing": "Vivienda",
-    "employment": "Empleo"
+    "employment": "Empleo",
+    "network": "Cobertura de Red"
+  },
+  "coverage": {
+    "pinLabel": "Zona monitoreada",
+    "peakLabel": "Pico de usuarios conectados"
   },
   "legend": {
     "title": "Capas activas",

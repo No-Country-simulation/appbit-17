@@ -1,17 +1,20 @@
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { useTranslation } from "react-i18next";
-import { GeoJSON, MapContainer, Marker, TileLayer, useMap } from "react-leaflet";
+import { GeoJSON, MapContainer, Marker, TileLayer, Tooltip, useMap } from "react-leaflet";
 import type { FeatureCollection } from "geojson";
 import { AIPrompt } from "../../components/AIPrompt";
 import { MapFilterBar, type MapFilterItem } from "../../components/MapFilterBar";
 import { Legend } from "../../components/Legend";
+import { MapPin } from "../../components/MapPin";
 import { RegionKpiCard } from "../../components/RegionKpiCard";
 import { QueryFlowModal } from "../../features/query-flow";
+import { useMapData } from "../../api/hooks";
 import { regionStyle } from "./regions";
 import { indexByName, mockRegionKpis, toCardProps } from "./regionKpis";
+import { toCoverageZones } from "./coverage";
 import bairros from "./bairros.json";
 
 // Corrige os ícones padrão do Leaflet com bundlers (Vite resolve as imagens
@@ -62,8 +65,9 @@ const REGION_KPIS = indexByName(
 );
 
 /** Temas do mapa (filtro client-side; o `/mapa` traz tudo). Os rótulos vêm
- *  do i18n (namespace `map`) — ver `themes.*`. */
-const THEME_VALUES = ["overview", "education", "health", "housing", "employment"] as const;
+ *  do i18n (namespace `map`) — ver `themes.*`. `network` liga a camada de
+ *  pins das zonas monitoradas (dado real do GET /mapa; ver ./coverage.ts). */
+const THEME_VALUES = ["overview", "network", "education", "health", "housing", "employment"] as const;
 
 /**
  * Controla os rótulos dos bairros conforme o zoom (deve viver dentro do
@@ -128,6 +132,27 @@ export function MapPage() {
     label: t(`themes.${value}`),
   }));
 
+  // Camada "Cobertura de Rede" — dado REAL do GET /mapa (zonas Vísent).
+  const { data: mapData } = useMapData();
+  // 1 pin por zona (agregado em ./coverage.ts). O divIcon é pré-computado
+  // aqui (e não no render dos Markers): a página re-renderiza a cada tecla
+  // do prompt e recriar o icon faria o Leaflet re-montar os pins à toa.
+  // MapPin é puro (sem hooks) → pode ser serializado com renderToStaticMarkup.
+  const coveragePins = useMemo(() => {
+    if (!mapData) return [];
+    return toCoverageZones(mapData.points).map((zone) => ({
+      ...zone,
+      icon: L.divIcon({
+        className: "coverage-pin",
+        html: renderToStaticMarkup(
+          <MapPin state="selected" label={`${t("coverage.pinLabel")}: ${zone.label}`} />,
+        ),
+        iconSize: [56, 56],
+        iconAnchor: [28, 28],
+      }),
+    }));
+  }, [mapData, t]);
+
   // Legenda montada uma vez e reutilizada em dois pontos (canto no desktop /
   // acima do prompt no tablet); só um deles fica visível por breakpoint.
   const legend = (
@@ -184,6 +209,22 @@ export function MapPage() {
         {BAIRRO_LABELS.map((b) => (
           <Marker key={b.name} position={b.center} icon={b.icon} interactive={false} />
         ))}
+
+        {/* Camada "Cobertura de Rede" (tema `network`) — um MapPin por zona
+            monitorada do Vísent (GET /mapa). Bairro sem pin = sem cobertura
+            de monitoramento (o dado não existe para todas as áreas).
+            Tooltip declarativo do react-leaflet → re-traduz sozinho. */}
+        {theme === "network" &&
+          coveragePins.map((zone) => (
+            <Marker key={zone.region} position={[zone.lat, zone.lng]} icon={zone.icon}>
+              <Tooltip direction="top" offset={[0, -28]} opacity={1} className="region-kpi-tooltip">
+                <RegionKpiCard
+                  value={zone.peak.toLocaleString("pt-BR")}
+                  label={`${zone.label} · ${t("coverage.peakLabel")}`}
+                />
+              </Tooltip>
+            </Marker>
+          ))}
 
         {/* Ajusta tamanho/visibilidade dos rótulos conforme o zoom. */}
         <BairroLabelZoom />

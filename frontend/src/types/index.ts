@@ -10,17 +10,16 @@ export type HealthStatus = {
   // TODO: versão, uptime, etc.
 };
 
-/** Uma região do mapa. */
-export type Region = {
-  id: string;
-  name: string;
-  // TODO: coordenadas/geometria + indicador(es)
-};
-
-/** GET /mapa — dados para renderizar o mapa. */
+/**
+ * GET /mapa — pontos georreferenciados das zonas monitoradas (Vísent).
+ * O backend devolve o schema `Visualizacao` (mesmo do `visualizacao` do
+ * POST /dados): ~4 leituras por zona (períodos do dia, sem rótulo no
+ * payload) com a coordenada da antena agregadora. Quem agrega por zona
+ * é a página (ver pages/MapPage/coverage.ts).
+ */
 export type MapData = {
-  regions: Region[];
-  // TODO: indicador selecionado, legenda, etc.
+  type: string;
+  points: MapPoint[];
 };
 
 /**

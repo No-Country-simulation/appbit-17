@@ -5,7 +5,12 @@
     "education": "Education",
     "health": "Health",
     "housing": "Housing",
-    "employment": "Employment"
+    "employment": "Employment",
+    "network": "Network Coverage"
+  },
+  "coverage": {
+    "pinLabel": "Monitored zone",
+    "peakLabel": "Peak connected users"
   },
   "legend": {
     "title": "Active layers",

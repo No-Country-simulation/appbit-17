@@ -9,6 +9,7 @@ import type {
   ConfidenceLevel,
   HealthStatus,
   MapData,
+  MapPoint,
   QueryRequest,
   QueryResult,
 } from "../types";
@@ -19,22 +20,32 @@ export function getHealth() {
   return api.get<HealthStatus>("/health");
 }
 
-/** GET /api/v1/mapa — regiões + indicadores do mapa. */
-export function getMapData() {
-  return api.get<MapData>("/mapa");
-}
-
 /* ---- Formato bruto do backend (wire) — chaves em PT ---- */
+
+/** Schema `Visualizacao` do backend — usado pelo GET /mapa e pelo
+ *  `visualizacao` do POST /dados. */
+type VisualizacaoDTO = {
+  tipo: string;
+  dados: { regiao: string; lat: number; lng: number; valor: number }[];
+};
+
 type QueryResponseDTO = {
   afirmacao: string;
   evidencias: { dado: string; valor: string; regiao: string; periodo: string; fonte: string }[];
   fontes: { nome: string; url: string | null; tipo: string }[];
   nivel_confianca: string;
-  visualizacao: {
-    tipo: string;
-    dados: { regiao: string; lat: number; lng: number; valor: number }[];
-  } | null;
+  visualizacao: VisualizacaoDTO | null;
 };
+
+function toMapPoints(dados: VisualizacaoDTO["dados"]): MapPoint[] {
+  return dados.map((d) => ({ region: d.regiao, lat: d.lat, lng: d.lng, value: d.valor }));
+}
+
+/** GET /api/v1/mapa — leituras de concentração por zona monitorada. */
+export async function getMapData(): Promise<MapData> {
+  const dto = await api.get<VisualizacaoDTO>("/mapa");
+  return { type: dto.tipo, points: toMapPoints(dto.dados) };
+}
 
 const CONFIDENCE: Record<string, ConfidenceLevel> = {
   alta: "high",
@@ -56,15 +67,7 @@ function toQueryResult(dto: QueryResponseDTO, responseTime: string): QueryResult
     sources: dto.fontes.map((f) => ({ name: f.nome, url: f.url, type: f.tipo })),
     confidence: CONFIDENCE[dto.nivel_confianca] ?? "medium",
     visualization: dto.visualizacao
-      ? {
-          type: dto.visualizacao.tipo,
-          points: dto.visualizacao.dados.map((d) => ({
-            region: d.regiao,
-            lat: d.lat,
-            lng: d.lng,
-            value: d.valor,
-          })),
-        }
+      ? { type: dto.visualizacao.tipo, points: toMapPoints(dto.visualizacao.dados) }
       : null,
     responseTime,
   };
