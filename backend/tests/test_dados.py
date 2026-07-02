@@ -1,8 +1,10 @@
-"""Testes do data_service: agregação de concentração e fluxos de mobilidade (OD)."""
+"""Testes do pacote de dados: agregação de concentração e fluxos de mobilidade (OD)."""
 
 import json
+import math
 
-from app.services import data_service
+from app.services import dados as data_service
+from app.services.dados.base import normalizar
 
 
 def test_buscar_geral_devolve_agregado_completo():
@@ -19,9 +21,7 @@ def test_buscar_filtra_por_regiao_sem_acento():
     linhas = data_service.buscar(regiao="São José")
     assert linhas, "esperava ao menos uma zona de São José"
     # o match é pela chave normalizada (sem acento, '_'→' ')
-    assert all(
-        "sao jose" in data_service._normalizar(r["municipio"] + " " + r["cluster"]) for r in linhas
-    )
+    assert all("sao jose" in normalizar(r["municipio"] + " " + r["cluster"]) for r in linhas)
 
 
 def test_renda_casa_mesmo_com_diferenca_de_acento():
@@ -38,6 +38,23 @@ def test_renda_baixa_pct_em_faixa_plausivel():
     assert all(0 <= p <= 100 for p in pcts)
     # neste dataset a renda é quase uniforme: spread entre zonas deve ser pequeno
     assert max(pcts) - min(pcts) < 10
+
+
+def test_buscar_respeita_limite_com_regiao():
+    # com região, o `limite` é a trava de segurança do filtro
+    linhas = data_service.buscar(regiao="Florianopolis", limite=3)
+    assert len(linhas) == 3
+
+
+def test_agregacao_valores_conhecidos():
+    # golden da zona SAO_JOSE_ROÇADO / MANHA — protege as regras de agregação:
+    # concentração = soma entre antenas → média entre dias; taxas ponderadas por
+    # n_usuarios; renda = %C+D via join normalizado. Se um valor mudar, a regra mudou.
+    (linha,) = [r for r in data_service.buscar(regiao="Roçado") if r["periodo"] == "MANHA"]
+    assert linha["concentracao"] == 7282
+    assert linha["congestionamento"] == 0.35
+    assert linha["drop_rede"] == 0.0685
+    assert linha["renda_baixa_pct"] == 64.5
 
 
 def test_buscar_serializa_em_json_nativo():
@@ -60,6 +77,20 @@ def test_mobilidade_filtra_origem_ou_destino():
     assert all(
         "campeche" in (f["cluster_origem"] + " " + f["cluster_destino"]).lower() for f in fluxos
     )
+
+
+def test_mobilidade_respeita_limite_com_regiao():
+    fluxos = data_service.buscar_mobilidade(regiao="Florianopolis", limite=5)
+    assert len(fluxos) == 5
+
+
+def test_mobilidade_nan_vira_none():
+    # municipio_origem/destino têm ausentes reais no OD. json.dumps NÃO quebra com NaN
+    # (serializa um 'NaN' inválido), então o teste de serialização sozinho não cobre a
+    # conversão NaN → None feita pelo serializador.
+    valores = [v for f in data_service.buscar_mobilidade(regiao=None) for v in f.values()]
+    assert not any(isinstance(v, float) and math.isnan(v) for v in valores)
+    assert any(v is None for v in valores)
 
 
 def test_mobilidade_serializa_em_json_nativo():
